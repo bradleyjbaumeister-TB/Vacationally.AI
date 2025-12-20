@@ -17,52 +17,61 @@ def generate_itinerary():
         data = request.json
         
         # Build the prompt for Grok
-        prompt = f"""You are an enthusiastic travel expert helping someone find their perfect vacation destination. Based on their preferences, recommend 3-5 specific destinations that match what they're looking for, then provide a detailed itinerary for the BEST match.
+        prompt = f"""You are an enthusiastic travel expert helping someone find their perfect vacation destination. Based on their preferences and budget, recommend 3-5 specific destinations that fit WITHIN their budget, then provide a detailed itinerary for the BEST match.
 
 PREFERENCES:
 - Vacation Type: {data.get('vacationType', 'Not specified')}
 - Travel Method: {data.get('travelMethod', 'Not specified')}
-- Budget per person: {data.get('budget', 'Not specified')}
-- Traveling with kids: {data.get('hasKids', 'Not specified')}
+- Total Trip Budget: ${data.get('totalBudget', 'Not specified')}
+- Number of Children: {data.get('numKids', 'Not specified')}
 - Trip Duration: {data.get('tripDuration', 'Not specified')}
 - Rental car needed: {data.get('needsCar', 'Not specified')}
 
+CRITICAL: All destination recommendations MUST fit within their ${data.get('totalBudget', 'Not specified')} budget. Include realistic cost estimates.
+
 FORMAT YOUR RESPONSE LIKE THIS:
 
-🌟 PERFECT DESTINATIONS FOR YOU:
+🌟 DESTINATIONS WITHIN YOUR ${data.get('totalBudget', 'Not specified')} BUDGET:
 
-1. [Destination Name] - [Brief reason why it's perfect]
-2. [Destination Name] - [Brief reason why it's perfect]
-3. [Destination Name] - [Brief reason why it's perfect]
+1. [Destination Name] - Estimated Total: $[amount] - [Brief reason why it's perfect]
+2. [Destination Name] - Estimated Total: $[amount] - [Brief reason why it's perfect]
+3. [Destination Name] - Estimated Total: $[amount] - [Brief reason why it's perfect]
 
 ---
 
 📍 TOP PICK: [Best Destination Name]
+💰 ESTIMATED TOTAL COST: $[amount]
 
 🎯 WHY YOU'LL LOVE IT:
 [2-3 sentences about what makes this destination perfect for them]
 
 ✈️ GETTING THERE:
-[Flight/driving info, average costs, tips]
+[Flight/driving info, realistic costs based on their travel method]
 
 🏨 WHERE TO STAY:
-[2-3 accommodation recommendations with price ranges]
+[2-3 accommodation recommendations within budget, with nightly rates]
 
 📅 YOUR ITINERARY:
-[Day-by-day breakdown with specific activities, restaurants, and experiences]
+[Day-by-day breakdown with specific activities, restaurants, and experiences - all within budget]
 
 🚗 GETTING AROUND:
-{'[Detailed public transportation info, apps to download, transit passes to buy, walking areas]' if data.get('needsCar') == 'no' else '[Car rental tips, parking info, driving considerations]'}
+{'[Detailed public transportation info, apps to download, transit passes to buy, walking areas, costs]' if data.get('needsCar') == 'no' else '[Car rental tips, estimated daily rate, parking info, driving considerations, gas costs]'}
 
-💰 BUDGET BREAKDOWN:
-[Estimated costs for flights/driving, accommodations, food, activities, transportation]
+💰 DETAILED BUDGET BREAKDOWN:
+- Transportation (flights/gas/car rental): $[amount]
+- Accommodations ([X] nights): $[amount]
+- Food & Dining: $[amount]
+- Activities & Entertainment: $[amount]
+- Local Transportation: $[amount]
+- Miscellaneous/Contingency: $[amount]
+**TOTAL: $[amount]** (within ${data.get('totalBudget', 'Not specified')} budget)
 
-{'👨‍👩‍👧‍👦 KID-FRIENDLY HIGHLIGHTS: [Specific activities and tips for families]' if data.get('hasKids') == 'yes' else ''}
+{'👨‍👩‍👧‍👦 FAMILY TIPS WITH ' + data.get('numKids', '0') + ' KIDS: [Specific activities, kid-friendly restaurants, and family travel tips]' if data.get('numKids', '0') != '0' else ''}
 
-💡 PRO TIPS:
-[3-5 insider tips to make the trip amazing]
+💡 MONEY-SAVING TIPS:
+[3-5 specific ways to save money on this trip]
 
-Make it exciting, specific, and actionable!"""
+Make it exciting, specific, realistic, and ensure everything fits their budget!"""
 
         # Call Grok API
         headers = {
