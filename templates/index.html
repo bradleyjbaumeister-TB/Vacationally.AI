@@ -469,13 +469,19 @@
             <!-- Card 4: Kids -->
             <div class="card" data-card="3">
                 <span class="question-emoji">👨‍👩‍👧‍👦</span>
-                <div class="question">Are you traveling with children?</div>
+                <div class="question">How many children are traveling with you?</div>
                 <div class="options">
-                    <button class="option-btn" onclick="selectOption('hasKids', 'yes', this)">
-                        👶 Yes - Family trip
+                    <button class="option-btn" onclick="selectOption('numKids', '0', this)">
+                        🧳 No children - Adults only
                     </button>
-                    <button class="option-btn" onclick="selectOption('hasKids', 'no', this)">
-                        🧳 No - Adults only
+                    <button class="option-btn" onclick="selectOption('numKids', '1', this)">
+                        👶 1 child
+                    </button>
+                    <button class="option-btn" onclick="selectOption('numKids', '2', this)">
+                        👧👦 2 children
+                    </button>
+                    <button class="option-btn" onclick="selectOption('numKids', '3+', this)">
+                        👨‍👩‍👧‍👦 3 or more children
                     </button>
                 </div>
             </div>
