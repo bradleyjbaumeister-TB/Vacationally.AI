@@ -82,11 +82,16 @@ Make it exciting, specific, realistic, and ensure everything fits their budget!"
         grok_data = {
             'messages': [
                 {
+                    'role': 'system',
+                    'content': 'You are a helpful travel assistant.'
+                },
+                {
                     'role': 'user',
                     'content': prompt
                 }
             ],
             'model': 'grok-beta',
+            'stream': False,
             'temperature': 0.7
         }
         
@@ -94,7 +99,7 @@ Make it exciting, specific, realistic, and ensure everything fits their budget!"
             'https://api.x.ai/v1/chat/completions',
             headers=headers,
             json=grok_data,
-            timeout=30
+            timeout=60
         )
         
         if response.status_code == 200:
@@ -105,9 +110,11 @@ Make it exciting, specific, realistic, and ensure everything fits their budget!"
                 'itinerary': itinerary
             })
         else:
+            error_detail = response.text
+            print(f"Grok API Error {response.status_code}: {error_detail}")
             return jsonify({
                 'success': False,
-                'error': f'Grok API error: {response.status_code}'
+                'error': f'Grok API error: {response.status_code}. Details: {error_detail}'
             }), 500
             
     except Exception as e:
