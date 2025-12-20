@@ -1,661 +1,143 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vacationally.AI - Find Your Perfect Getaway</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Caveat:wght@700&display=swap');
+from flask import Flask, render_template, request, jsonify
+import os
+import requests
+
+app = Flask(__name__)
+
+# Get Grok API key from environment variable
+GROK_API_KEY = os.environ.get('GROK_API_KEY')
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/api/generate-itinerary', methods=['POST'])
+def generate_itinerary():
+    try:
+        data = request.json
         
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        # Build the prompt for Grok
+        prompt = f"""You are an enthusiastic travel expert helping someone discover their perfect vacation destination. Based on their detailed preferences, recommend 3-5 specific destinations that perfectly match their personality and travel style, then provide a comprehensive itinerary for the BEST match.
+
+TRAVELER PROFILE:
+- Weather Preference: {data.get('weather', 'Not specified')}
+- Activity Level: {data.get('activityLevel', 'Not specified')}
+- Crowd Tolerance: {data.get('crowds', 'Not specified')}
+- Food Interest: {data.get('food', 'Not specified')}
+- Cultural Interest: {data.get('culture', 'Not specified')}
+- Nightlife Preference: {data.get('nightlife', 'Not specified')}
+- Setting Preference: {data.get('setting', 'Not specified')}
+- Travel Style: {data.get('travelStyle', 'Not specified')}
+- Travel Method: {data.get('travelMethod', 'Not specified')}
+- Total Trip Budget: ${data.get('totalBudget', 'Not specified')}
+- Number of Children: {data.get('numKids', 'Not specified')}
+- Trip Duration: {data.get('tripDuration', 'Not specified')}
+- Rental Car: {data.get('needsCar', 'Not specified')}
+
+CRITICAL: All destination recommendations MUST fit within their ${data.get('totalBudget', 'Not specified')} budget AND match their preferences perfectly.
+
+FORMAT YOUR RESPONSE LIKE THIS:
+
+🎯 BASED ON YOUR PREFERENCES, HERE ARE YOUR PERFECT MATCHES:
+
+1. [Destination Name] - Est. Cost: $[amount]
+   Why it's perfect: [Explain how it matches their weather, activity level, crowd preference, food scene, culture, nightlife, and setting preferences]
+
+2. [Destination Name] - Est. Cost: $[amount]
+   Why it's perfect: [Match to their specific preferences]
+
+3. [Destination Name] - Est. Cost: $[amount]
+   Why it's perfect: [Match to their specific preferences]
+
+---
+
+📍 YOUR #1 MATCH: [Best Destination Name]
+💰 ESTIMATED TOTAL COST: $[amount] (within your ${data.get('totalBudget', 'Not specified')} budget)
+
+🎯 WHY THIS IS YOUR PERFECT DESTINATION:
+[Detailed explanation of how this destination matches their weather preference, activity level, crowd tolerance, food interests, cultural interests, nightlife preference, and setting preference. Be specific about why this beats the other options for THEM.]
+
+✈️ GETTING THERE:
+{f"[Flight options, airlines, booking tips, estimated costs based on their travel style: {data.get('travelStyle', 'Not specified')}]" if data.get('travelMethod') in ['fly', 'either'] else f"[Driving route, road trip highlights, estimated gas costs, recommended stops, travel time]"}
+
+🏨 WHERE TO STAY - MATCHED TO YOUR STYLE:
+[2-3 accommodation recommendations that match their {data.get('travelStyle', 'Not specified')} travel style, with nightly rates and why each fits their preferences]
+
+📅 YOUR PERSONALIZED ITINERARY:
+[Create a day-by-day breakdown that reflects their activity level ({data.get('activityLevel', 'Not specified')}), food interests ({data.get('food', 'Not specified')}), cultural interests ({data.get('culture', 'Not specified')}), and nightlife preferences ({data.get('nightlife', 'Not specified')}). Include specific restaurants, activities, and experiences.]
+
+🚗 GETTING AROUND:
+{f"[Public transportation details, walkability, transit apps, passes to buy, estimated costs] - Perfect for someone who prefers {data.get('crowds', 'Not specified')} crowds" if data.get('needsCar') == 'no' else f"[Car rental recommendations, parking tips, driving considerations, estimated costs] - Great for exploring at your own pace" if data.get('needsCar') == 'yes' else "[Transportation recommendations based on your destination - I'll tell you whether a car makes sense or not]"}
+
+💰 DETAILED BUDGET BREAKDOWN:
+- Transportation: $[amount]
+- Accommodations ([X] nights at {data.get('travelStyle', 'Not specified')} level): $[amount]
+- Food & Dining (matching {data.get('food', 'Not specified')} preferences): $[amount]
+- Activities & Entertainment: $[amount]
+- Local Transportation: $[amount]
+- Miscellaneous: $[amount]
+**TOTAL: $[amount]** ✓ Within budget
+
+{'👨‍👩‍👧‍👦 TRAVELING WITH ' + data.get('numKids', '0') + ' KIDS:
+[Age-appropriate activities, kid-friendly restaurants that match your food preferences, family logistics, childcare options if parents want a night out based on nightlife preference]' if data.get('numKids', '0') != '0' else ''}
+
+🌤️ WEATHER & WHAT TO PACK:
+[Expected weather conditions that match their preference for {data.get('weather', 'Not specified')}, packing list, best time to visit]
+
+💡 INSIDER TIPS FOR YOUR TRAVEL STYLE:
+[5-7 specific tips that match their preferences for crowds ({data.get('crowds', 'Not specified')}), activity level ({data.get('activityLevel', 'Not specified')}), and budget ({data.get('travelStyle', 'Not specified')})]
+
+Make it feel like you deeply understand them as a traveler and this destination was chosen specifically for their unique combination of preferences!"""
+
+        # Call Grok API
+        headers = {
+            'Authorization': f'Bearer {GROK_API_KEY}',
+            'Content-Type': 'application/json'
         }
         
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            position: relative;
-            overflow-x: hidden;
-        }
-        
-        body::before {
-            content: '';
-            position: absolute;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 50px 50px;
-            animation: drift 20s linear infinite;
-            pointer-events: none;
-        }
-        
-        @keyframes drift {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(50px, 50px); }
-        }
-        
-        .container {
-            max-width: 700px;
-            width: 100%;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            animation: fadeInDown 0.8s ease;
-        }
-        
-        .logo {
-            font-family: 'Caveat', cursive;
-            font-size: 3.5rem;
-            color: #fff;
-            margin-bottom: 10px;
-            text-shadow: 3px 3px 10px rgba(0,0,0,0.2);
-        }
-        
-        .tagline {
-            font-size: 1.3rem;
-            color: rgba(255,255,255,0.95);
-            font-weight: 400;
-            letter-spacing: 0.5px;
-        }
-        
-        .card-container {
-            background: #fff;
-            border-radius: 30px;
-            padding: 50px 40px;
-            box-shadow: 0 30px 80px rgba(0,0,0,0.3);
-            position: relative;
-            min-height: 450px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        
-        .card {
-            display: none;
-            animation: slideIn 0.4s ease;
-        }
-        
-        .card.active {
-            display: block;
-        }
-        
-        .question {
-            font-size: 2rem;
-            color: #2d3748;
-            margin-bottom: 35px;
-            text-align: center;
-            font-weight: 600;
-            line-height: 1.4;
-        }
-        
-        .question-emoji {
-            font-size: 2.5rem;
-            display: block;
-            margin-bottom: 15px;
-        }
-        
-        .options {
-            display: grid;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .option-btn {
-            font-family: 'Poppins', sans-serif;
-            font-size: 1.1rem;
-            font-weight: 600;
-            padding: 20px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .option-btn::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.2);
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
-        }
-        
-        .option-btn:hover::before {
-            width: 300px;
-            height: 300px;
-        }
-        
-        .option-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
-        }
-        
-        .option-btn:active {
-            transform: translateY(0);
-        }
-        
-        .option-btn.selected {
-            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
-            box-shadow: 0 4px 15px rgba(86, 171, 47, 0.4);
-        }
-        
-        input[type="text"],
-        input[type="number"],
-        select {
-            font-family: 'Poppins', sans-serif;
-            font-size: 1.1rem;
-            padding: 18px 20px;
-            border: 2px solid #e2e8f0;
-            border-radius: 15px;
-            width: 100%;
-            background: #f7fafc;
-            color: #2d3748;
-            transition: all 0.3s ease;
-        }
-        
-        input[type="text"]:focus,
-        input[type="number"]:focus,
-        select:focus {
-            outline: none;
-            border-color: #667eea;
-            background: #fff;
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-        }
-        
-        input[type="text"]::placeholder,
-        input[type="number"]::placeholder {
-            color: #a0aec0;
-        }
-        
-        select {
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%232d3748' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 20px center;
-            padding-right: 50px;
-        }
-        
-        .navigation {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 30px;
-            gap: 15px;
-        }
-        
-        .nav-btn {
-            font-family: 'Poppins', sans-serif;
-            font-size: 1rem;
-            font-weight: 600;
-            padding: 15px 30px;
-            background: #e2e8f0;
-            color: #4a5568;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .nav-btn.primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .nav-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-        }
-        
-        .nav-btn.primary:hover:not(:disabled) {
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-        }
-        
-        .nav-btn:active:not(:disabled) {
-            transform: translateY(0);
-        }
-        
-        .nav-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-        
-        .progress {
-            height: 6px;
-            background: #e2e8f0;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 35px;
-        }
-        
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: 10px;
-        }
-        
-        .result-container {
-            display: none;
-        }
-        
-        .result-container.active {
-            display: block;
-            animation: fadeIn 0.6s ease;
-        }
-        
-        .itinerary {
-            background: #f7fafc;
-            padding: 30px;
-            border-radius: 20px;
-            border: 2px solid #e2e8f0;
-            max-height: 600px;
-            overflow-y: auto;
-            font-size: 1rem;
-            line-height: 1.8;
-            color: #2d3748;
-            white-space: pre-wrap;
-        }
-        
-        .itinerary::-webkit-scrollbar {
-            width: 10px;
-        }
-        
-        .itinerary::-webkit-scrollbar-track {
-            background: #e2e8f0;
-            border-radius: 10px;
-        }
-        
-        .itinerary::-webkit-scrollbar-thumb {
-            background: #cbd5e0;
-            border-radius: 10px;
-        }
-        
-        .itinerary::-webkit-scrollbar-thumb:hover {
-            background: #a0aec0;
-        }
-        
-        .loading {
-            text-align: center;
-            font-size: 1.3rem;
-            color: #4a5568;
-            padding: 40px;
-        }
-        
-        .spinner {
-            border: 4px solid #e2e8f0;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 0.8s linear infinite;
-            margin: 20px auto;
-        }
-        
-        .destination-suggestions {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .suggestion-btn {
-            font-family: 'Poppins', sans-serif;
-            font-size: 0.9rem;
-            padding: 12px;
-            background: #f7fafc;
-            color: #4a5568;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-        
-        .suggestion-btn:hover {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-            transform: translateY(-2px);
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        @media (max-width: 768px) {
-            .logo {
-                font-size: 2.5rem;
-            }
-            
-            .tagline {
-                font-size: 1rem;
-            }
-            
-            .card-container {
-                padding: 35px 25px;
-            }
-            
-            .question {
-                font-size: 1.6rem;
-            }
-            
-            .option-btn {
-                font-size: 1rem;
-                padding: 18px 25px;
-            }
-            
-            .destination-suggestions {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">✈️ Vacationally.AI</div>
-            <div class="tagline">Answer a few questions and discover your perfect getaway</div>
-        </div>
-        
-        <div class="card-container">
-            <div class="progress">
-                <div class="progress-bar" id="progressBar"></div>
-            </div>
-            
-            <!-- Card 1: Travel Style -->
-            <div class="card active" data-card="0">
-                <span class="question-emoji">🌍</span>
-                <div class="question">What kind of vacation are you looking for?</div>
-                <div class="options">
-                    <button class="option-btn" onclick="selectOption('vacationType', 'beach', this)">
-                        🏖️ Beach & Relaxation
-                    </button>
-                    <button class="option-btn" onclick="selectOption('vacationType', 'city', this)">
-                        🏙️ City & Culture
-                    </button>
-                    <button class="option-btn" onclick="selectOption('vacationType', 'adventure', this)">
-                        🏔️ Adventure & Nature
-                    </button>
-                    <button class="option-btn" onclick="selectOption('vacationType', 'mixed', this)">
-                        🎭 Mix of Everything
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Card 2: Travel Method -->
-            <div class="card" data-card="1">
-                <span class="question-emoji">✈️</span>
-                <div class="question">How would you prefer to travel?</div>
-                <div class="options">
-                    <button class="option-btn" onclick="selectOption('travelMethod', 'fly', this)">
-                        ✈️ Flying - Get there fast
-                    </button>
-                    <button class="option-btn" onclick="selectOption('travelMethod', 'drive', this)">
-                        🚗 Driving - Road trip adventure
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Card 3: Budget -->
-            <div class="card" data-card="2">
-                <span class="question-emoji">💰</span>
-                <div class="question">What's your travel budget per person?</div>
-                <div class="options">
-                    <button class="option-btn" onclick="selectOption('budget', 'budget', this)">
-                        💵 Budget-Friendly<br><small style="opacity: 0.8;">Under $1,000</small>
-                    </button>
-                    <button class="option-btn" onclick="selectOption('budget', 'moderate', this)">
-                        💳 Moderate<br><small style="opacity: 0.8;">$1,000 - $3,000</small>
-                    </button>
-                    <button class="option-btn" onclick="selectOption('budget', 'luxury', this)">
-                        💎 Luxury<br><small style="opacity: 0.8;">$3,000+</small>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Card 4: Kids -->
-            <div class="card" data-card="3">
-                <span class="question-emoji">👨‍👩‍👧‍👦</span>
-                <div class="question">How many children are traveling with you?</div>
-                <div class="options">
-                    <button class="option-btn" onclick="selectOption('numKids', '0', this)">
-                        🧳 No children - Adults only
-                    </button>
-                    <button class="option-btn" onclick="selectOption('numKids', '1', this)">
-                        👶 1 child
-                    </button>
-                    <button class="option-btn" onclick="selectOption('numKids', '2', this)">
-                        👧👦 2 children
-                    </button>
-                    <button class="option-btn" onclick="selectOption('numKids', '3+', this)">
-                        👨‍👩‍👧‍👦 3 or more children
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Card 5: Trip Duration -->
-            <div class="card" data-card="4">
-                <span class="question-emoji">📅</span>
-                <div class="question">How long is your trip?</div>
-                <div class="options">
-                    <button class="option-btn" onclick="selectOption('tripDuration', '3-4', this)">
-                        Weekend Getaway (3-4 days)
-                    </button>
-                    <button class="option-btn" onclick="selectOption('tripDuration', '5-7', this)">
-                        Week Trip (5-7 days)
-                    </button>
-                    <button class="option-btn" onclick="selectOption('tripDuration', '8-14', this)">
-                        Extended Stay (8-14 days)
-                    </button>
-                    <button class="option-btn" onclick="selectOption('tripDuration', '15+', this)">
-                        Long Vacation (15+ days)
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Card 6: Car Rental -->
-            <div class="card" data-card="5">
-                <span class="question-emoji">🚗</span>
-                <div class="question">Will you need a rental car?</div>
-                <div class="options">
-                    <button class="option-btn" onclick="selectOption('needsCar', 'yes', this)">
-                        🚗 Yes - I'll rent a car
-                    </button>
-                    <button class="option-btn" onclick="selectOption('needsCar', 'no', this)">
-                        🚇 No - Show me public transit options
-                    </button>
-                </div>
-            </div>
-            
-            <div class="navigation">
-                <button class="nav-btn" id="backBtn" onclick="previousCard()" disabled>
-                    ← Back
-                </button>
-                <button class="nav-btn primary" id="nextBtn" onclick="nextCard()">
-                    Next →
-                </button>
-            </div>
-        </div>
-        
-        <div class="result-container" id="resultContainer">
-            <div class="card-container">
-                <div class="question">🎉 Your Perfect Vacation Awaits!</div>
-                <div id="loadingDiv" class="loading">
-                    <div class="spinner"></div>
-                    Finding the perfect destinations for you...
-                </div>
-                <div id="itinerary" class="itinerary" style="display: none;"></div>
-                <div class="navigation">
-                    <button class="nav-btn primary" onclick="restart()">
-                        ✨ Plan Another Trip
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <script>
-        let currentCard = 0;
-        const totalCards = 6;
-        const answers = {
-            vacationType: '',
-            travelMethod: '',
-            budget: '',
-            hasKids: '',
-            tripDuration: '',
-            needsCar: ''
-        };
-        
-        function updateProgress() {
-            const progress = ((currentCard) / totalCards) * 100;
-            document.getElementById('progressBar').style.width = progress + '%';
-        }
-        
-        function selectOption(key, value, btn) {
-            answers[key] = value;
-            
-            const siblings = btn.parentElement.querySelectorAll('.option-btn');
-            siblings.forEach(sib => sib.classList.remove('selected'));
-            
-            btn.classList.add('selected');
-            
-            setTimeout(() => {
-                nextCard();
-            }, 400);
-        }
-        
-        function nextCard() {
-            if (currentCard < totalCards - 1) {
-                document.querySelectorAll('.card')[currentCard].classList.remove('active');
-                currentCard++;
-                document.querySelectorAll('.card')[currentCard].classList.add('active');
-                updateProgress();
-                updateButtons();
-            } else {
-                generateItinerary();
-            }
-        }
-        
-        function previousCard() {
-            if (currentCard > 0) {
-                document.querySelectorAll('.card')[currentCard].classList.remove('active');
-                currentCard--;
-                document.querySelectorAll('.card')[currentCard].classList.add('active');
-                updateProgress();
-                updateButtons();
-            }
-        }
-        
-        function updateButtons() {
-            document.getElementById('backBtn').disabled = currentCard === 0;
-            document.getElementById('nextBtn').innerHTML = currentCard === totalCards - 1 ? 'Find My Vacation ✨' : 'Next →';
-        }
-        
-        async function generateItinerary() {
-            document.querySelector('.card-container').style.display = 'none';
-            document.getElementById('resultContainer').classList.add('active');
-            
-            try {
-                const response = await fetch('/api/generate-itinerary', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(answers)
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    document.getElementById('loadingDiv').style.display = 'none';
-                    document.getElementById('itinerary').style.display = 'block';
-                    document.getElementById('itinerary').textContent = data.itinerary;
-                } else {
-                    document.getElementById('loadingDiv').innerHTML = '❌ Oops! Something went wrong: ' + data.error;
+        grok_data = {
+            'messages': [
+                {
+                    'role': 'system',
+                    'content': 'You are a helpful travel assistant.'
+                },
+                {
+                    'role': 'user',
+                    'content': prompt
                 }
-            } catch (error) {
-                document.getElementById('loadingDiv').innerHTML = '❌ Unable to generate your vacation plan. Please try again!';
-                console.error('Error:', error);
-            }
+            ],
+            'model': 'grok-beta',
+            'stream': False,
+            'temperature': 0.7
         }
         
-        function restart() {
-            currentCard = 0;
-            Object.keys(answers).forEach(key => answers[key] = '');
-            
-            document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
-            
-            document.getElementById('resultContainer').classList.remove('active');
-            document.querySelector('.card-container').style.display = 'flex';
-            
-            document.querySelectorAll('.card').forEach((card, index) => {
-                card.classList.remove('active');
-                if (index === 0) card.classList.add('active');
-            });
-            
-            document.getElementById('loadingDiv').style.display = 'block';
-            document.getElementById('itinerary').style.display = 'none';
-            document.getElementById('itinerary').textContent = '';
-            
-            updateProgress();
-            updateButtons();
-        }
+        response = requests.post(
+            'https://api.x.ai/v1/chat/completions',
+            headers=headers,
+            json=grok_data,
+            timeout=60
+        )
         
-        updateProgress();
-        updateButtons();
-    </script>
-</body>
-</html>
+        if response.status_code == 200:
+            grok_response = response.json()
+            itinerary = grok_response['choices'][0]['message']['content']
+            return jsonify({
+                'success': True,
+                'itinerary': itinerary
+            })
+        else:
+            error_detail = response.text
+            print(f"Grok API Error {response.status_code}: {error_detail}")
+            return jsonify({
+                'success': False,
+                'error': f'Grok API error: {response.status_code}. Details: {error_detail}'
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
