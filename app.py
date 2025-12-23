@@ -17,61 +17,76 @@ def generate_itinerary():
         data = request.json
         
         # Build the prompt for Grok
-        prompt = f"""You are an enthusiastic travel expert helping someone find their perfect vacation destination. Based on their preferences and budget, recommend 3-5 specific destinations that fit WITHIN their budget, then provide a detailed itinerary for the BEST match.
+        prompt = f"""You are an enthusiastic travel expert helping someone discover their perfect vacation destination. Based on their detailed preferences, recommend 3-5 specific destinations that perfectly match their personality and travel style, then provide a comprehensive itinerary for the BEST match.
 
-PREFERENCES:
-- Vacation Type: {data.get('vacationType', 'Not specified')}
+TRAVELER PROFILE:
+- Weather Preference: {data.get('weather', 'Not specified')}
+- Activity Level: {data.get('activityLevel', 'Not specified')}
+- Crowd Tolerance: {data.get('crowds', 'Not specified')}
+- Food Interest: {data.get('food', 'Not specified')}
+- Cultural Interest: {data.get('culture', 'Not specified')}
+- Nightlife Preference: {data.get('nightlife', 'Not specified')}
+- Setting Preference: {data.get('setting', 'Not specified')}
+- Travel Style: {data.get('travelStyle', 'Not specified')}
 - Travel Method: {data.get('travelMethod', 'Not specified')}
 - Total Trip Budget: ${data.get('totalBudget', 'Not specified')}
 - Number of Children: {data.get('numKids', 'Not specified')}
 - Trip Duration: {data.get('tripDuration', 'Not specified')}
-- Rental car needed: {data.get('needsCar', 'Not specified')}
+- Rental Car: {data.get('needsCar', 'Not specified')}
 
-CRITICAL: All destination recommendations MUST fit within their ${data.get('totalBudget', 'Not specified')} budget. Include realistic cost estimates.
+CRITICAL: All destination recommendations MUST fit within their ${data.get('totalBudget', 'Not specified')} budget AND match their preferences perfectly.
 
 FORMAT YOUR RESPONSE LIKE THIS:
 
-🌟 DESTINATIONS WITHIN YOUR ${data.get('totalBudget', 'Not specified')} BUDGET:
+🎯 BASED ON YOUR PREFERENCES, HERE ARE YOUR PERFECT MATCHES:
 
-1. [Destination Name] - Estimated Total: $[amount] - [Brief reason why it's perfect]
-2. [Destination Name] - Estimated Total: $[amount] - [Brief reason why it's perfect]
-3. [Destination Name] - Estimated Total: $[amount] - [Brief reason why it's perfect]
+1. [Destination Name] - Est. Cost: $[amount]
+   Why it's perfect: [Explain how it matches their weather, activity level, crowd preference, food scene, culture, nightlife, and setting preferences]
+
+2. [Destination Name] - Est. Cost: $[amount]
+   Why it's perfect: [Match to their specific preferences]
+
+3. [Destination Name] - Est. Cost: $[amount]
+   Why it's perfect: [Match to their specific preferences]
 
 ---
 
-📍 TOP PICK: [Best Destination Name]
-💰 ESTIMATED TOTAL COST: $[amount]
+📍 YOUR #1 MATCH: [Best Destination Name]
+💰 ESTIMATED TOTAL COST: $[amount] (within your ${data.get('totalBudget', 'Not specified')} budget)
 
-🎯 WHY YOU'LL LOVE IT:
-[2-3 sentences about what makes this destination perfect for them]
+🎯 WHY THIS IS YOUR PERFECT DESTINATION:
+[Detailed explanation of how this destination matches their weather preference, activity level, crowd tolerance, food interests, cultural interests, nightlife preference, and setting preference. Be specific about why this beats the other options for THEM.]
 
 ✈️ GETTING THERE:
-[Flight/driving info, realistic costs based on their travel method]
+{f"[Flight options, airlines, booking tips, estimated costs based on their travel style: {data.get('travelStyle', 'Not specified')}]" if data.get('travelMethod') in ['fly', 'either'] else f"[Driving route, road trip highlights, estimated gas costs, recommended stops, travel time]"}
 
-🏨 WHERE TO STAY:
-[2-3 accommodation recommendations within budget, with nightly rates]
+🏨 WHERE TO STAY - MATCHED TO YOUR STYLE:
+[2-3 accommodation recommendations that match their {data.get('travelStyle', 'Not specified')} travel style, with nightly rates and why each fits their preferences]
 
-📅 YOUR ITINERARY:
-[Day-by-day breakdown with specific activities, restaurants, and experiences - all within budget]
+📅 YOUR PERSONALIZED ITINERARY:
+[Create a day-by-day breakdown that reflects their activity level ({data.get('activityLevel', 'Not specified')}), food interests ({data.get('food', 'Not specified')}), cultural interests ({data.get('culture', 'Not specified')}), and nightlife preferences ({data.get('nightlife', 'Not specified')}). Include specific restaurants, activities, and experiences.]
 
 🚗 GETTING AROUND:
-{'[Detailed public transportation info, apps to download, transit passes to buy, walking areas, costs]' if data.get('needsCar') == 'no' else '[Car rental tips, estimated daily rate, parking info, driving considerations, gas costs]'}
+{f"[Public transportation details, walkability, transit apps, passes to buy, estimated costs] - Perfect for someone who prefers {data.get('crowds', 'Not specified')} crowds" if data.get('needsCar') == 'no' else f"[Car rental recommendations, parking tips, driving considerations, estimated costs] - Great for exploring at your own pace" if data.get('needsCar') == 'yes' else "[Transportation recommendations based on your destination - I'll tell you whether a car makes sense or not]"}
 
 💰 DETAILED BUDGET BREAKDOWN:
-- Transportation (flights/gas/car rental): $[amount]
-- Accommodations ([X] nights): $[amount]
-- Food & Dining: $[amount]
+- Transportation: $[amount]
+- Accommodations ([X] nights at {data.get('travelStyle', 'Not specified')} level): $[amount]
+- Food & Dining (matching {data.get('food', 'Not specified')} preferences): $[amount]
 - Activities & Entertainment: $[amount]
 - Local Transportation: $[amount]
-- Miscellaneous/Contingency: $[amount]
-**TOTAL: $[amount]** (within ${data.get('totalBudget', 'Not specified')} budget)
+- Miscellaneous: $[amount]
+**TOTAL: $[amount]** ✓ Within budget
 
-{'👨‍👩‍👧‍👦 FAMILY TIPS WITH ' + data.get('numKids', '0') + ' KIDS: [Specific activities, kid-friendly restaurants, and family travel tips]' if data.get('numKids', '0') != '0' else ''}
+{'👨‍👩‍👧‍👦 TRAVELING WITH ' + data.get('numKids', '0') + ' KIDS: [Age-appropriate activities, kid-friendly restaurants that match your food preferences, family logistics, childcare options if parents want a night out based on nightlife preference]' if data.get('numKids', '0') != '0' else ''}
 
-💡 MONEY-SAVING TIPS:
-[3-5 specific ways to save money on this trip]
+🌤️ WEATHER & WHAT TO PACK:
+[Expected weather conditions that match their preference for {data.get('weather', 'Not specified')}, packing list, best time to visit]
 
-Make it exciting, specific, realistic, and ensure everything fits their budget!"""
+💡 INSIDER TIPS FOR YOUR TRAVEL STYLE:
+[5-7 specific tips that match their preferences for crowds ({data.get('crowds', 'Not specified')}), activity level ({data.get('activityLevel', 'Not specified')}), and budget ({data.get('travelStyle', 'Not specified')})]
+
+Make it feel like you deeply understand them as a traveler and this destination was chosen specifically for their unique combination of preferences!"""
 
         # Call Grok API
         headers = {
@@ -125,3 +140,4 @@ Make it exciting, specific, realistic, and ensure everything fits their budget!"
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+    
