@@ -90,7 +90,7 @@ Make it exciting, specific, realistic, and ensure everything fits their budget!"
                     'content': prompt
                 }
             ],
-            'model': 'grok-beta',
+            'model': 'grok-2-1212',
             'stream': False,
             'temperature': 0.7
         }
