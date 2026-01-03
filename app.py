@@ -105,7 +105,7 @@ Make it feel like you deeply understand them as a traveler and this destination 
                     'content': prompt
                 }
             ],
-            'model': 'grok-2',
+            'model': 'grok-2-vision-1212',
             'stream': False,
             'temperature': 0.7
         }
