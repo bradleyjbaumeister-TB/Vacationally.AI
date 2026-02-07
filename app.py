@@ -6,6 +6,10 @@ app = Flask(__name__)
 
 GROK_API_KEY = os.environ.get('GROK_API_KEY')
 
+@app.route('/test')
+def test():
+    return "TEST ROUTE WORKS - Flask is running!"
+
 @app.route('/')
 def index():
     return render_template('index.html')
