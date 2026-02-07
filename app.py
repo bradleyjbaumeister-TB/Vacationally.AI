@@ -15,11 +15,11 @@ def generate_itinerary():
     try:
         data = request.json
         
-        prompt = f"""You are an enthusiastic travel expert. Recommend 3-5 destinations within ${data.get('totalBudget')} budget.
-Preferences: {data.get('weather')}, {data.get('activityLevel')}, {data.get('crowds')}, {data.get('food')}, 
+        prompt = f"""Travel expert: recommend 3-5 destinations within ${data.get('totalBudget')} budget based on: 
+{data.get('weather')}, {data.get('activityLevel')}, {data.get('crowds')}, {data.get('food')}, 
 {data.get('culture')}, {data.get('nightlife')}, {data.get('setting')}, {data.get('travelStyle')}, 
 {data.get('travelMethod')}, {data.get('numKids')} kids, {data.get('tripDuration')}, car: {data.get('needsCar')}.
-Provide detailed itinerary with costs, accommodations, transportation, and tips."""
+Provide detailed itinerary with costs."""
 
         response = requests.post(
             'https://api.x.ai/v1/chat/completions',
@@ -39,7 +39,7 @@ Provide detailed itinerary with costs, accommodations, transportation, and tips.
         if response.status_code == 200:
             return jsonify({'success': True, 'itinerary': response.json()['choices'][0]['message']['content']})
         else:
-            return jsonify({'success': False, 'error': f'API error {response.status_code}: {response.text}'}), 500
+            return jsonify({'success': False, 'error': f'API error {response.status_code}'}), 500
             
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
